@@ -123,7 +123,7 @@ html { -webkit-text-size-adjust: 100%; }
       <label class="check"><input type="checkbox" id="grid"><span class="box" aria-hidden="true"></span> 1m 격자</label>
     </section>
 
-    <p class="note">구조는 누리안 도면(2026.11.16, A-001 평면 · A-003 입면 A · A-006 원형 장식)의 선을 그대로 옮겼습니다. D벽 통로(NC 가공)와 C벽 원형 VOID, 물결 기둥(R400)은 도면 곡선입니다. 물결 기둥은 D벽 앞으로 120mm 나와 있습니다. 상부 보는 높이 3,200–4,000mm입니다. 기본 패널 이미지는 인디자인 현장제작물 파일(65–71쪽, 1/10)입니다. G 사인 위치와 뒤쪽 아트월 높이(2,400mm)는 도면에 없어 임의로 잡았습니다.</p>
+    <p class="note">구조는 누리안 도면(2026.11.16, A-001 평면 · A-003 입면 A · A-006 원형 장식)의 선을 그대로 옮겼습니다. D벽 통로(NC 가공)와 C벽 원형 VOID, 물결 기둥(R400)은 도면 곡선입니다. 물결 기둥은 D벽 앞으로 120mm 나와 있습니다. 상부 보는 높이 3,200–4,000mm입니다. 기본 패널 이미지는 인디자인 현장제작물 파일(65–69·71·72쪽, 1/10, F는 72쪽 보 앞면)입니다. G 사인 위치와 뒤쪽 아트월 높이(2,400mm)는 도면에 없어 임의로 잡았습니다.</p>
   </aside>
 </div>
 
@@ -205,7 +205,7 @@ html { -webkit-text-size-adjust: 100%; }
   /* ---------- structure ---------- */
   // A 사선벽 + B 옆면벽: triangular volume, 4,000 high
   prism([[0, 0], [0, 2205], [4000, 0]], 0, 4000, wallMat);
-  // 상부 보 (F 사인 자리): 4,081 × ~600, Y 3,200–4,000
+  // 상부 보 (F 패널: 앞면 전체): 4,081 × ~600, Y 3,200–4,000
   var BEAM = [[3302, 401], [7195, 1616], [6991, 2271], [3094, 1056]];
   prism(BEAM, 3200, 4000, wallMat);
   // C 정면벽: 2,800 × 4,000, 두께 600 (Z 1,000–1,604), 오른쪽 R800 원형 VOID
@@ -236,7 +236,7 @@ html { -webkit-text-size-adjust: 100%; }
     { id: 'C', name: '정면벽', w: 2800, h: 4000 },
     { id: 'D', name: '메인 정면벽', w: 8000, h: 4500 },
     { id: 'E', name: '사이드벽', w: 1800, h: 3600 },
-    { id: 'F', name: '왼쪽 출입구 상부', w: 3100, h: 150 },
+    { id: 'F', name: '상부 보 앞면', w: 4081, h: 800 },
     { id: 'G', name: '오른쪽 출입구 상부', w: 5600, h: 250 }
   ];
   var byId = {}; PANELS.forEach(function (p) { byId[p.id] = p; });
@@ -272,7 +272,7 @@ html { -webkit-text-size-adjust: 100%; }
   byId.E.mesh = rectPanel(18000, 19800, 0, 3600, wz(2400) + EPS);
   // F: centred on the beam's front face (P4→P3)
   (function () {
-    var a = BEAM[3], b = BEAM[2], t0 = 0.5 - (3100 / 2) / Math.hypot(b[0] - a[0], b[1] - a[1]), t1 = 1 - t0;
+    var a = BEAM[3], b = BEAM[2], t0 = 0.5 - (byId.F.w / 2) / Math.hypot(b[0] - a[0], b[1] - a[1]), t1 = 1 - t0;
     byId.F.mesh = edgePlane(byId.F, a[0] + (b[0] - a[0]) * t0, a[1] + (b[1] - a[1]) * t0, a[0] + (b[0] - a[0]) * t1, a[1] + (b[1] - a[1]) * t1, 3600, EPS);
   })();
   // G: on D's top band above the passage (position assumed)
@@ -326,7 +326,7 @@ html { -webkit-text-size-adjust: 100%; }
   /* ---------- panel list UI ---------- */
   var list = $('panels');
   PANELS.forEach(function (p) {
-    p.defUrl = 'panels/' + p.id + '.jpg?v=261119e';
+    p.defUrl = 'panels/' + p.id + '.jpg?v=261119f';
     var li = document.createElement('li'); li.id = 'row-' + p.id;
     li.innerHTML =
       '<button class="thumb" type="button" aria-label="' + p.id + ' ' + p.name + ' 이미지 올리기"><img alt=""></button>' +
