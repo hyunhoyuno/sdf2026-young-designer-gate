@@ -91,10 +91,16 @@ ul.panels li.drag { background: color-mix(in srgb, var(--accent) 8%, transparent
 }
 html { -webkit-text-size-adjust: 100%; }
 [hidden] { display: none !important; }
+.vbar { position: absolute; top: 10px; left: 12px; right: 12px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; pointer-events: none; }
+.vbar .vlab { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-right: 2px; }
+.vbar button { pointer-events: auto; font-family: var(--font-mono), var(--font-body); font-size: 12px; padding: 4px 10px; border: 1px dotted var(--muted); background: var(--scene); color: var(--fg); cursor: pointer; border-radius: 0; }
+.vbar button:hover { border-style: solid; border-color: var(--accent); }
+.vbar button[aria-pressed="true"] { background: var(--accent); border: 1px solid var(--accent); color: var(--accent-ink); }
 </style>
 
 <div class="app">
   <main class="stage" id="stage" aria-label="영 디자이너 게이트 3D 뷰">
+    <div class="vbar" id="vbar" role="group" aria-label="버전"><span class="vlab">버전</span></div>
     <div class="hint">드래그 회전 · 휠 확대 · 우클릭 이동</div>
     <div class="drop-veil" id="veil" hidden>패널 목록의 벽 위에 놓아 주세요</div>
   </main>
@@ -293,7 +299,7 @@ html { -webkit-text-size-adjust: 100%; }
   }
   function loadDefault(p) {
     var url = p.defUrl;
-    loader.load(url, function (tex) { setTex(p, tex, tex.image.width, tex.image.height, 'default'); p.thumbUrl = url; renderRow(p); });
+    loader.load(url, function (tex) { if (p.defUrl !== url) { tex.dispose(); return; } setTex(p, tex, tex.image.width, tex.image.height, 'default'); p.thumbUrl = url; renderRow(p); });
   }
 
   /* ---------- per-browser storage for uploaded images ---------- */
@@ -328,10 +334,30 @@ html { -webkit-text-size-adjust: 100%; }
     img.src = url;
   }
 
+  /* ---------- versions (InDesign exports; newest first) ---------- */
+  var VERSIONS = [
+    { id: '1120', label: '11.20 최신', dir: 'panels', v: '261120a' },
+    { id: '1119', label: '11.19', dir: 'versions/1119', v: '261119h' }
+  ];
+  var curVer = VERSIONS[0];
+  function verUrl(id) { return curVer.dir + '/' + id + '.jpg?v=' + curVer.v; }
+  var vbar = $('vbar');
+  VERSIONS.forEach(function (v) {
+    var b = document.createElement('button'); b.type = 'button'; b.textContent = v.label; b.dataset.ver = v.id;
+    b.setAttribute('aria-pressed', v === curVer ? 'true' : 'false');
+    b.addEventListener('click', function () {
+      if (curVer === v) return;
+      curVer = v;
+      vbar.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', x.dataset.ver === v.id ? 'true' : 'false'); });
+      PANELS.forEach(function (p) { p.defUrl = verUrl(p.id); if (p.src !== 'upload') loadDefault(p); });
+    });
+    vbar.appendChild(b);
+  });
+
   /* ---------- panel list UI ---------- */
   var list = $('panels');
   PANELS.forEach(function (p) {
-    p.defUrl = 'panels/' + p.id + '.jpg?v=261119h';
+    p.defUrl = verUrl(p.id);
     var li = document.createElement('li'); li.id = 'row-' + p.id;
     li.innerHTML =
       '<button class="thumb" type="button" aria-label="' + p.id + ' ' + p.name + ' 이미지 올리기"><img alt=""></button>' +
