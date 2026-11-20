@@ -184,7 +184,7 @@ html { -webkit-text-size-adjust: 100%; }
   var artMat = new THREE.MeshLambertMaterial({ color: 0x55565a });
   // each wall body takes the background colour of its own panel image (sampled after load)
   var bodyMat = {};
-  ['A', 'C', 'D', 'E', 'F'].forEach(function (id) { bodyMat[id] = new THREE.MeshLambertMaterial({ color: 0xfff100 }); });
+  ['A', 'C', 'D', 'E', 'F', 'W'].forEach(function (id) { bodyMat[id] = new THREE.MeshLambertMaterial({ color: 0xfff100 }); });
 
   var edgeMat = new THREE.LineBasicMaterial({ color: 0x8c8d90 });
   function mesh(geo, mat) {
@@ -227,7 +227,7 @@ html { -webkit-text-size-adjust: 100%; }
   var D_OUT = [[10000, 0]].concat(GEOM.void).concat([[18000, 0], [18000, 4500], [11400, 4500], [11400, 3800], [10700, 3800], [10700, 3100], [10000, 3100]]);
   slab(D_OUT, 0, 2400, bodyMat.D);
   // 물결 기둥: D 앞면에서 120 돌출, 높이 4,000
-  slab(GEOM.scallop, 2400, 2520, bodyMat.D);
+  slab(GEOM.scallop, 2400, 2520, bodyMat.W);
   // E 사이드벽: 1,800 × 3,600, 깊이 1,200
   prism([[18000, 1200], [19800, 1200], [19800, 2400], [18000, 2400]], 0, 3600, bodyMat.E);
 
@@ -314,6 +314,12 @@ html { -webkit-text-size-adjust: 100%; }
         var k = (r >> 4) + ',' + (gg >> 4) + ',' + (b >> 4), e = bins[k] || (bins[k] = { n: 0, r: 0, g: 0, b: 0 });
         e.n++; e.r += r; e.g += gg; e.b += b; if (!best || e.n > best.n) best = e;
       }
+      if (p.id === 'D') {
+        // 물결 기둥 옆면: D 이미지 오른쪽 가운데(기둥 안쪽) 색
+        var q = g.getImageData(n - 4, n / 2 - 3, 3, 6).data, sr = 0, sg = 0, sb = 0, sn = 0;
+        for (var j = 0; j < q.length; j += 4) { if (Math.max(q[j], q[j + 1], q[j + 2]) < 70) continue; sr += q[j]; sg += q[j + 1]; sb += q[j + 2]; sn++; }
+        if (sn) bodyMat.W.color.setRGB(sr / sn / 255, sg / sn / 255, sb / sn / 255).convertSRGBToLinear();
+      }
       if (!best) return;
       m.color.setRGB(best.r / best.n / 255, best.g / best.n / 255, best.b / best.n / 255).convertSRGBToLinear();
     } catch (e) {}
@@ -357,7 +363,7 @@ html { -webkit-text-size-adjust: 100%; }
 
   /* ---------- versions (InDesign exports; newest first) ---------- */
   var VERSIONS = [
-    { id: '1120', label: '11.20 최신', dir: 'panels', v: '261120b' },
+    { id: '1120', label: '11.20 최신', dir: 'panels', v: '261120c' },
     { id: '1119', label: '11.19', dir: 'versions/1119', v: '261119h' }
   ];
   var curVer = VERSIONS[0];
