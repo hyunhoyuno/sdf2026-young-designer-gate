@@ -182,6 +182,9 @@ html { -webkit-text-size-adjust: 100%; }
   /* ---------- materials ---------- */
   var wallMat = new THREE.MeshLambertMaterial({ color: 0xfff100 });
   var artMat = new THREE.MeshLambertMaterial({ color: 0x55565a });
+  // each wall body takes the background colour of its own panel image (sampled after load)
+  var bodyMat = {};
+  ['A', 'C', 'D', 'E', 'F'].forEach(function (id) { bodyMat[id] = new THREE.MeshLambertMaterial({ color: 0xfff100 }); });
 
   var edgeMat = new THREE.LineBasicMaterial({ color: 0x8c8d90 });
   function mesh(geo, mat) {
@@ -210,23 +213,23 @@ html { -webkit-text-size-adjust: 100%; }
 
   /* ---------- structure ---------- */
   // A 사선벽 + B 옆면벽: triangular volume, 4,000 high
-  prism([[0, 0], [0, 2205], [4000, 0]], 0, 4000, wallMat);
+  prism([[0, 0], [0, 2205], [4000, 0]], 0, 4000, bodyMat.A);
   // 상부 보 (F 패널: 앞면 전체): 4,081 × ~600, Y 3,200–4,000
   var BEAM = [[3302, 401], [7195, 1616], [6991, 2271], [3094, 1056]];
-  prism(BEAM, 3200, 4000, wallMat);
+  prism(BEAM, 3200, 4000, bodyMat.F);
   // C 정면벽: 2,800 × 4,000, 두께 600 (Z 1,000–1,604), 오른쪽 R800 원형 VOID
   var C_OUT = [[7200, 0], [10000, 0], [10000, 2222]].concat(GEOM.arc.slice().reverse().slice(1, -1)).concat([[10000, 3500], [10000, 4000], [7200, 4000]]);
-  slab(C_OUT, 1000, 1604, wallMat);
+  slab(C_OUT, 1000, 1604, bodyMat.C);
   // 원형 장식 Detail 01: Ø600, 두께 200
-  var disc = mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.2, 48), wallMat);
+  var disc = mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.2, 48), bodyMat.C);
   disc.rotation.x = Math.PI / 2; disc.position.set(wx(GEOM.sphere.cx), GEOM.sphere.cy / 1000, wz(1302));
   // D 메인 정면벽: 8,000 × 4,500, 깊이 2,400, NC 가공 통로 + 왼쪽 위 계단 단차
   var D_OUT = [[10000, 0]].concat(GEOM.void).concat([[18000, 0], [18000, 4500], [11400, 4500], [11400, 3800], [10700, 3800], [10700, 3100], [10000, 3100]]);
-  slab(D_OUT, 0, 2400, wallMat);
+  slab(D_OUT, 0, 2400, bodyMat.D);
   // 물결 기둥: D 앞면에서 120 돌출, 높이 4,000
-  slab(GEOM.scallop, 2400, 2520, wallMat);
+  slab(GEOM.scallop, 2400, 2520, bodyMat.D);
   // E 사이드벽: 1,800 × 3,600, 깊이 1,200
-  prism([[18000, 1200], [19800, 1200], [19800, 2400], [18000, 2400]], 0, 3600, wallMat);
+  prism([[18000, 1200], [19800, 1200], [19800, 2400], [18000, 2400]], 0, 3600, bodyMat.E);
 
   // 기존 아트월 (도면 검은 선, 두께 80, 높이는 도면에 없어 2,400 가정)
   var artGroup = new THREE.Group(); scene.add(artGroup);
@@ -295,7 +298,25 @@ html { -webkit-text-size-adjust: 100%; }
     if (p.mesh.material.map) p.mesh.material.map.dispose();
     p.mesh.material.map = tex; p.mesh.material.needsUpdate = true;
     p.src = src; p.ratioImg = w / h;
+    tintBody(p, tex.image);
     renderRow(p);
+  }
+  // dominant non-black/non-white colour of an image -> that wall's body material
+  function tintBody(p, img) {
+    var m = bodyMat[p.id]; if (!m || !img) return;
+    try {
+      var c = document.createElement('canvas'), n = 64; c.width = n; c.height = n;
+      var g = c.getContext('2d'); g.drawImage(img, 0, 0, n, n);
+      var d = g.getImageData(0, 0, n, n).data, bins = {}, best = null;
+      for (var i = 0; i < d.length; i += 4) {
+        var r = d[i], gg = d[i + 1], b = d[i + 2], mx = Math.max(r, gg, b), mn = Math.min(r, gg, b);
+        if (mx < 70 || (mn > 215 && mx - mn < 25) || mx - mn < 18) continue;
+        var k = (r >> 4) + ',' + (gg >> 4) + ',' + (b >> 4), e = bins[k] || (bins[k] = { n: 0, r: 0, g: 0, b: 0 });
+        e.n++; e.r += r; e.g += gg; e.b += b; if (!best || e.n > best.n) best = e;
+      }
+      if (!best) return;
+      m.color.setRGB(best.r / best.n / 255, best.g / best.n / 255, best.b / best.n / 255).convertSRGBToLinear();
+    } catch (e) {}
   }
   function loadDefault(p) {
     var url = p.defUrl;
@@ -336,7 +357,7 @@ html { -webkit-text-size-adjust: 100%; }
 
   /* ---------- versions (InDesign exports; newest first) ---------- */
   var VERSIONS = [
-    { id: '1120', label: '11.20 최신', dir: 'panels', v: '261120a' },
+    { id: '1120', label: '11.20 최신', dir: 'panels', v: '261120b' },
     { id: '1119', label: '11.19', dir: 'versions/1119', v: '261119h' }
   ];
   var curVer = VERSIONS[0];
